@@ -5,7 +5,9 @@ from Viewer import Viewer
 from List import List
 from QEasyList import QEasyList
 
-from tools import getFiles, getDirs, filterImages
+from tools import getFiles, getDirs, filterImages, moveFile
+
+from DataModels.Dir import Dir
 
 
 class MainWindow(QMainWindow):
@@ -21,6 +23,7 @@ class MainWindow(QMainWindow):
         self.viewer = Viewer()
 
         self.list = List()
+        self.list.categorySelected.connect(self.onCategorySelect)
 
         self.mainLayout = QVBoxLayout()
         self.mainLayout.addWidget(self.browser)
@@ -37,6 +40,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.widget)
 
         self._index = -1
+
+    def onCategorySelect(self, directory: Dir):
+        moveFile(self.file, directory)
+        # file moved, but need to update self.files or/and self.index
 
     def dupa(self, widget):
         print(widget.text())

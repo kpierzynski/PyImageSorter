@@ -10,6 +10,8 @@ from DataModels.Dir import Dir
 
 
 class List(QWidget):
+    categorySelected = Signal(Dir)
+
     def __init__(self, listItems: list[Dir] = []):
         super().__init__()
         self.setList(listItems)
@@ -28,5 +30,5 @@ class List(QWidget):
             widget = ListElement(entry)
             self.listView.addWidget(widget)
 
-    def onSelected(self, widget):
-        print(widget)
+    def onSelected(self, widget: ListElement):
+        self.categorySelected.emit(widget.getDir())
