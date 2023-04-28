@@ -4,21 +4,19 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 from ListElement import ListElement
+from QEasyList import QEasyList
 
 from DataModels.Dir import Dir
 
 
 class List(QWidget):
-    def __init__(self, listItems=[]):
+    def __init__(self, listItems: list[Dir] = []):
         super().__init__()
-
-        self.list = listItems
+        self.setList(listItems)
 
         self.mainLayout = QHBoxLayout()
-        self.listView: QListWidget = QListWidget()
-        self.listView.doubleClicked.connect(self.handleDoubleClick)
-
-        self.setList(listItems)
+        self.listView = QEasyList()
+        self.listView.selected.connect(self.onSelected)
 
         self.mainLayout.addWidget(self.listView)
         self.setLayout(self.mainLayout)
@@ -28,15 +26,7 @@ class List(QWidget):
 
         for entry in self.list:
             widget = ListElement(entry)
+            self.listView.addWidget(widget)
 
-            item = QListWidgetItem(self.listView)
-            item.setSizeHint(widget.sizeHint())
-
-            self.listView.addItem(item)
-            self.listView.setItemWidget(item, widget)
-
-    def handleDoubleClick(self, index):
-        item = self.listView.itemFromIndex(index)
-        widget = self.listView.itemWidget(item)
-
+    def onSelected(self, widget):
         print(widget)

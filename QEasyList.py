@@ -7,6 +7,7 @@ class QEasyList(QListWidget):
 
     def __init__(self, listItems: list[QWidget] = []):
         super().__init__()
+        self.list = []
 
         for widget in listItems:
             self.addWidget(widget)

@@ -1,5 +1,5 @@
-from os.path import join, isfile, isdir
-from os import listdir
+from os.path import join, isfile, isdir, basename
+from os import listdir, rename
 
 from PIL import Image
 
@@ -41,3 +41,17 @@ def filterImages(files: list[File]) -> list[File]:
             return False
 
     return [x for x in files if is_image(x.path)]
+
+
+def _moveFile(filePath: str, targetDir: str) -> None:
+    fileName = basename(filePath)
+    targetPath = join(targetDir, fileName)
+
+    if isfile(targetPath):
+        raise Exception(f"Target file exists. Cannot move {fileName} file.")
+    else:
+        rename(filePath, targetPath)
+
+
+def moveFile(file: File, direct: Dir) -> None:
+    _moveFile(file.path, direct.path)
