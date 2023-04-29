@@ -19,6 +19,10 @@ class Viewer(QWidget):
         self.setImagePath(self.path)
 
     def setImagePath(self, path):
+        if not path:
+            print("No corrent path was given.")
+            return
+
         self.path = path
         self.pixmap = QPixmap(self.path)
         self.scene.clear()

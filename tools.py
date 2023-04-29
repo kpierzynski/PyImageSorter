@@ -1,5 +1,5 @@
-from os.path import join, isfile, isdir, basename
-from os import listdir, rename
+from os.path import join, isfile, isdir, basename, exists
+from os import listdir, rename, makedirs
 
 from PIL import Image
 
@@ -55,3 +55,12 @@ def _moveFile(filePath: str, targetDir: str) -> None:
 
 def moveFile(file: File, direct: Dir) -> None:
     _moveFile(file.path, direct.path)
+
+
+def createDirectory(path: str) -> Dir | None:
+    if exists(path):
+        raise Exception(f"Directory {path} exists!")
+        return
+
+    makedirs(path)
+    return Dir(path)

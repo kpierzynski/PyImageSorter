@@ -11,7 +11,7 @@ class ListElement(QWidget):
 
         self.mainLayout = QHBoxLayout()
 
-        self.nameLabel = QLabel(self.dir.name)
+        self.nameLabel = QLabel(f'{self.dir.name}')
 
         self.mainLayout.addWidget(self.nameLabel)
 

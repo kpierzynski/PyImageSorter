@@ -1,13 +1,14 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from Browser import Browser
 from Viewer import Viewer
 from List import List
 from QEasyList import QEasyList
 
-from tools import getFiles, getDirs, filterImages, moveFile
+from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
 
 from DataModels.Dir import Dir
+from os.path import join
 
 
 class MainWindow(QMainWindow):
@@ -18,12 +19,13 @@ class MainWindow(QMainWindow):
         self.createMenu()
 
         self.browser = Browser()
-        self.browser.browse.connect(self.directoryPicked)
+        self.browser.browse.connect(self.onDirectoryPicked)
 
         self.viewer = Viewer()
 
         self.list = List()
         self.list.categorySelected.connect(self.onCategorySelect)
+        self.list.newCategoryCreated.connect(self.onNewCategoryCreation)
 
         self.mainLayout = QVBoxLayout()
         self.mainLayout.addWidget(self.browser)
@@ -39,26 +41,62 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.widget)
 
+        self.files = []
         self._index = -1
 
     def onCategorySelect(self, directory: Dir):
-        moveFile(self.file, directory)
-        # file moved, but need to update self.files or/and self.index
+        try:
+            moveFile(self.file, directory)
+            self.files.pop(self._index)
+            self.index = self.index
+        except Exception as e:
+            QMessageBox(QMessageBox.Critical, 'Error occur',
+                        f'Cannot move image to "{directory.name}", there is already file named "{self.file.name}"').exec()
 
-    def dupa(self, widget):
-        print(widget.text())
+    def onNewCategoryCreation(self, categoryName: str) -> None:
+        if not self.path:
+            return
+
+        try:
+            createDirectory(join(self.path, categoryName))
+            self.list.setList(getDirs(self.path))
+
+        except Exception as e:
+            print(e)
+            QMessageBox(QMessageBox.Critical, 'Error occur',
+                        f'Cannot create "{categoryName}" category, it exists!').exec()
+
+    @property
+    def file(self):
+        if self._index < 0 or self._index >= len(self.files):
+            return None
+        return self.files[self.index]
 
     @property
     def index(self):
         return self._index
 
     @index.setter
-    def index(self, newIndex: int):
-        self._index = (newIndex % len(self.files))
-        self.file = self.files[self._index]
+    def index(self, value):
+        if len(self.files) <= 0:
+            self._index = -1
+            return
+
+        self._index = (value % len(self.files))
 
         self.viewer.setImagePath(self.file.path)
-        self.statusBar().showMessage(f'{self.index} {self.file.name}')
+        self.statusBar().showMessage(
+            f"{self._index}/{len(self.files)}: {self.file.path}", 0)
+        return self._index
+
+    def onDirectoryPicked(self, path: str):
+        self.path = path
+        self.files = filterImages(getFiles(path))
+        self.list.setList(getDirs(path))
+        self.index = 0
+
+    def onSelectDirectory(self):
+        self.browser.browsePath()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A:
@@ -66,16 +104,7 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key_D:
             self.index += 1
 
-    def directoryPicked(self, path: str):
-        self.files = filterImages(getFiles(path))
-        self.list.setList(getDirs(path))
-
-        self.index = 0
-
-    def selectDirectory(self):
-        self.browser.browsePath()
-
-    def exit(self):
+    def onExit(self):
         self.close()
 
     def createMenu(self):
@@ -86,11 +115,11 @@ class MainWindow(QMainWindow):
                     {
                         "name": "Open Directory",
                         "spacerAfter": True,
-                        "action": self.selectDirectory
+                        "action": self.onSelectDirectory
                     },
                     {
                         "name": "Exit",
-                        "action": self.exit
+                        "action": self.onExit
                     }
                 ]
             },
