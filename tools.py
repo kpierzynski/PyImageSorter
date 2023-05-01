@@ -32,15 +32,7 @@ def getDirs(path: str) -> list[Dir]:
 
 
 def filterImages(files: list[File]) -> list[File]:
-    def is_image(filePath):
-        try:
-            img = Image.open(filePath)
-            img.verify()
-            return True
-        except:
-            return False
-
-    return [x for x in files if is_image(x.path)]
+    return [x for x in files if x.isImage]
 
 
 def _moveFile(filePath: str, targetDir: str) -> None:

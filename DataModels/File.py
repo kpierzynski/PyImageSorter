@@ -11,6 +11,8 @@ class File:
         self.name = basename(path)
 
         if self._isImage():
+            self.isImage = True
+
             with Image.open(self.path) as img:
                 self.width, self.height = img.size
                 time = getctime(self.path)

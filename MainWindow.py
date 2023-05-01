@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
 
         self._index = (value % len(self.files))
 
-        self.viewer.setImagePath(self.file.path)
+        self.viewer.setImage(self.file)
         self.statusBar().showMessage(
             f"{self._index}/{len(self.files)}: {self.file.path}", 0)
         return self._index
@@ -103,6 +103,10 @@ class MainWindow(QMainWindow):
             self.index -= 1
         elif event.key() == Qt.Key_D:
             self.index += 1
+
+    def onHelp(self):
+        QMessageBox(QMessageBox.Critical, "Help",
+                    "Created by kpierzynski").exec()
 
     def onExit(self):
         self.close()
@@ -125,6 +129,7 @@ class MainWindow(QMainWindow):
             },
             {
                 "name": "Help",
+                "action": self.onHelp
             }
         ]
 

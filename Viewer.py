@@ -1,11 +1,12 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QGraphicsView, QGraphicsScene
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QGraphicsView, QGraphicsScene, QLabel
 from PySide6.QtGui import QPixmap, QPainter, Qt
+
+from DataModels import File
 
 
 class Viewer(QWidget):
-    def __init__(self, path=""):
+    def __init__(self, file: File = None):
         super().__init__()
-        self.path = path
 
         self.view = QGraphicsView(self)
         self.view.setAlignment(Qt.AlignCenter)
@@ -13,18 +14,25 @@ class Viewer(QWidget):
         self.view.setScene(self.scene)
         self.view.setRenderHint(QPainter.Antialiasing)
 
+        self.infoLabel = QLabel()
+
         self.mainLayout = QVBoxLayout(self)
+        self.mainLayout.addWidget(self.infoLabel)
         self.mainLayout.addWidget(self.view)
 
-        self.setImagePath(self.path)
+        if file:
+            self.setImage(self.file)
 
-    def setImagePath(self, path):
-        if not path:
+    def setImage(self, file: File):
+        if not file:
             print("No corrent path was given.")
             return
 
-        self.path = path
-        self.pixmap = QPixmap(self.path)
+        self.file = file
+        self.infoLabel.setText(
+            f"{self.file.width}x{self.file.height}, created: {self.file.time}")
+
+        self.pixmap = QPixmap(self.file.path)
         self.scene.clear()
         self.scene.addPixmap(self.pixmap)
 
