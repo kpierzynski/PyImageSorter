@@ -23,6 +23,10 @@ class Viewer(QWidget):
         if file:
             self.setImage(self.file)
 
+    def clear(self):
+        self.infoLabel.clear()
+        self.scene.clear()
+
     def setImage(self, file: File):
         if not file:
             print("No corrent path was given.")

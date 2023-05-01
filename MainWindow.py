@@ -8,6 +8,7 @@ from QEasyList import QEasyList
 from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
 
 from DataModels.Dir import Dir
+from DataModels.File import File
 from os.path import join
 
 
@@ -67,20 +68,22 @@ class MainWindow(QMainWindow):
                         f'Cannot create "{categoryName}" category, it exists!').exec()
 
     @property
-    def file(self):
+    def file(self) -> File:
         if self._index < 0 or self._index >= len(self.files):
             return None
         return self.files[self.index]
 
     @property
-    def index(self):
+    def index(self) -> int:
         return self._index
 
     @index.setter
-    def index(self, value):
+    def index(self, value: int) -> int:
         if len(self.files) <= 0:
             self._index = -1
-            return
+            self.viewer.clear()
+            self.statusBar().showMessage(f"0/0: no more images found!", 0)
+            return self._index
 
         self._index = (value % len(self.files))
 

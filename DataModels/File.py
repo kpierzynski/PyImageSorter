@@ -9,6 +9,7 @@ class File:
         self.path = path
 
         self.name = basename(path)
+        self.isImage = False
 
         if self._isImage():
             self.isImage = True
