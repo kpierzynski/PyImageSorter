@@ -28,14 +28,13 @@ class MainWindow(QMainWindow):
         self.list.categorySelected.connect(self.onCategorySelect)
         self.list.newCategoryCreated.connect(self.onNewCategoryCreation)
 
-        self.mainLayout = QVBoxLayout()
-        self.mainLayout.addWidget(self.browser)
+        self.container = QVBoxLayout()
+        self.container.addWidget(self.browser)
+        self.container.addWidget(self.viewer)
 
-        self.container = QHBoxLayout()
-        self.container.addWidget(self.viewer, 1)
-        self.container.addWidget(self.list, 0)
-
-        self.mainLayout.addLayout(self.container)
+        self.mainLayout = QHBoxLayout()
+        self.mainLayout.addLayout(self.container, 1)
+        self.mainLayout.addWidget(self.list, 0)
 
         self.widget = QWidget()
         self.widget.setLayout(self.mainLayout)
