@@ -14,17 +14,14 @@ class Viewer(QWidget):
         self.view.setScene(self.scene)
         self.view.setRenderHint(QPainter.Antialiasing)
 
-        self.infoLabel = QLabel()
-
         self.mainLayout = QVBoxLayout(self)
-        self.mainLayout.addWidget(self.infoLabel)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.mainLayout.addWidget(self.view)
 
         if file:
             self.setImage(self.file)
 
     def clear(self):
-        self.infoLabel.clear()
         self.scene.clear()
 
     def setImage(self, file: File):
@@ -33,8 +30,6 @@ class Viewer(QWidget):
             return
 
         self.file = file
-        self.infoLabel.setText(
-            f"{self.file.width}x{self.file.height}, created: {self.file.time}")
 
         self.pixmap = QPixmap(self.file.path)
         self.scene.clear()

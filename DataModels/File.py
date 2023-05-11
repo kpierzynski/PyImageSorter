@@ -22,8 +22,6 @@ class File:
 
                 self.time = time
 
-            print(self.width, self.height, self.time)
-
     def _isImage(self) -> bool:
         try:
             with Image.open(self.path) as img:

@@ -17,6 +17,8 @@ class List(QWidget):
         super().__init__()
 
         self.mainLayout = QVBoxLayout()
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+
         self.listView = QEasyList()
         self.listView.selected.connect(self.onSelected)
 

@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from Browser import Browser
 from Viewer import Viewer
 from List import List
@@ -19,27 +20,36 @@ class MainWindow(QMainWindow):
 
         self.createMenu()
 
+        self.viewer = Viewer()
         self.browser = Browser()
         self.browser.browse.connect(self.onDirectoryPicked)
-
-        self.viewer = Viewer()
 
         self.list = List()
         self.list.categorySelected.connect(self.onCategorySelect)
         self.list.newCategoryCreated.connect(self.onNewCategoryCreation)
 
-        self.container = QVBoxLayout()
-        self.container.addWidget(self.browser)
-        self.container.addWidget(self.viewer)
+        self.detailsFrame = QFrame()
+        self.detailsLayout = QVBoxLayout()
+        self.detailsFrame.setLayout(self.detailsLayout)
 
-        self.mainLayout = QHBoxLayout()
-        self.mainLayout.addLayout(self.container, 1)
-        self.mainLayout.addWidget(self.list, 0)
+        self.details = QTextEdit()
+        self.details.setReadOnly(True)
+        col = self.palette().placeholderText().color()
+        self.details.setTextColor(col)
 
-        self.widget = QWidget()
-        self.widget.setLayout(self.mainLayout)
+        self.splitterH = QSplitter(Qt.Horizontal)
+        self.splitterH.addWidget(self.list)
+        self.splitterH.addWidget(self.viewer)
+        self.splitterH.setStretchFactor(0, 0)
+        self.splitterH.setStretchFactor(1, 1)
 
-        self.setCentralWidget(self.widget)
+        self.splitterV = QSplitter(Qt.Vertical)
+        self.splitterV.addWidget(self.splitterH)
+        self.splitterV.addWidget(self.details)
+        self.splitterV.setStretchFactor(0, 1)
+        self.splitterV.setStretchFactor(1, 0)
+
+        self.setCentralWidget(self.splitterV)
 
         self.files = []
         self._index = -1
@@ -70,7 +80,9 @@ class MainWindow(QMainWindow):
     def file(self) -> File:
         if self._index < 0 or self._index >= len(self.files):
             return None
-        return self.files[self.index]
+
+        file = self.files[self.index]
+        return file
 
     @property
     def index(self) -> int:
@@ -81,14 +93,20 @@ class MainWindow(QMainWindow):
         if len(self.files) <= 0:
             self._index = -1
             self.viewer.clear()
-            self.statusBar().showMessage(f"0/0: no more images found!", 0)
+            self.details.clear()
+            self.statusBar().showMessage(
+                f"{self.index}/{len(self.files)} {self.path}", 0)
             return self._index
 
         self._index = (value % len(self.files))
 
-        self.viewer.setImage(self.file)
         self.statusBar().showMessage(
-            f"{self._index}/{len(self.files)}: {self.file.path}", 0)
+            f"{self._index}/{len(self.files)} {self.path}", 0)
+
+        self.viewer.setImage(self.file)
+        self.details.setText(
+            f"File: {self.file.name}\nPath: {self.file.path}\nDate: {self.file.time}\nDimensions: {self.file.width}x{self.file.height}")
+
         return self._index
 
     def onDirectoryPicked(self, path: str):
@@ -96,6 +114,8 @@ class MainWindow(QMainWindow):
         self.files = filterImages(getFiles(path))
         self.list.setList(getDirs(path))
         self.index = 0
+        self.statusBar().showMessage(
+            f"{self.index}/{len(self.files)} {self.path}", 0)
 
     def onSelectDirectory(self):
         self.browser.browsePath()
