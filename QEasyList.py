@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QListWidget, QListWidgetItem
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QPainter
 
 
 class QEasyList(QListWidget):
@@ -13,6 +14,20 @@ class QEasyList(QListWidget):
             self.addWidget(widget)
 
         self.doubleClicked.connect(self._doubleClick)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+
+        if not len(self.list):
+            painter = QPainter(self.viewport())
+            painter.save()
+
+            col = self.palette().placeholderText().color()
+            painter.setPen(col)
+
+            painter.drawText(self.viewport().rect().adjusted(0, 10, 0, 0),
+                             Qt.AlignHCenter, "Empty")
+            painter.restore()
 
     def addWidget(self, widget: QWidget) -> None:
         self.list.append(widget)
