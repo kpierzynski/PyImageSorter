@@ -4,7 +4,6 @@ from PySide6.QtGui import QIcon
 from Browser import Browser
 from Viewer import Viewer
 from List import List
-from QEasyList import QEasyList
 
 from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
 
@@ -51,6 +50,9 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.splitterV)
 
+        self.undo = QAction("Undo", self)
+        self.undo.setShort
+
         self.files = []
         self._index = -1
 
@@ -88,20 +90,21 @@ class MainWindow(QMainWindow):
     def index(self) -> int:
         return self._index
 
+    def updateStatusBar(self):
+        self.statusBar().showMessage(
+            f"{self._index}/{len(self.files)} {self.path}", 0)
+
     @index.setter
     def index(self, value: int) -> int:
+        self.updateStatusBar()
+
         if len(self.files) <= 0:
             self._index = -1
             self.viewer.clear()
             self.details.clear()
-            self.statusBar().showMessage(
-                f"{self.index}/{len(self.files)} {self.path}", 0)
             return self._index
 
         self._index = (value % len(self.files))
-
-        self.statusBar().showMessage(
-            f"{self._index}/{len(self.files)} {self.path}", 0)
 
         self.viewer.setImage(self.file)
         self.details.setText(
@@ -114,8 +117,7 @@ class MainWindow(QMainWindow):
         self.files = filterImages(getFiles(path))
         self.list.setList(getDirs(path))
         self.index = 0
-        self.statusBar().showMessage(
-            f"{self.index}/{len(self.files)} {self.path}", 0)
+        self.updateStatusBar()
 
     def onSelectDirectory(self):
         self.browser.browsePath()

@@ -1,10 +1,9 @@
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QListWidget, QListWidgetItem, QMessageBox, QInputDialog
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QIcon
 
 from ListElement import ListElement
-from QEasyList import QEasyList
 
 from DataModels.Dir import Dir
 
@@ -19,15 +18,16 @@ class List(QWidget):
         self.mainLayout = QVBoxLayout()
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.listView = QEasyList()
-        self.listView.selected.connect(self.onSelected)
+        self.listView = QListWidget()
+        self.listView.itemDoubleClicked.connect(self.onSelected)
 
-        self.newCategoryBtn = QPushButton("New..")
+        self.newCategoryBtn = QPushButton("New category")
+        self.newCategoryBtn.setIcon(QIcon.fromTheme("folder-new"))
         self.newCategoryBtn.clicked.connect(self.onNewCategory)
         self.newCategoryBtn.setDisabled(True)
 
-        self.mainLayout.addWidget(self.newCategoryBtn)
         self.mainLayout.addWidget(self.listView)
+        self.mainLayout.addWidget(self.newCategoryBtn)
         self.setLayout(self.mainLayout)
 
         self.setList(listItems)
@@ -39,13 +39,13 @@ class List(QWidget):
         if len(self.list):
             self.newCategoryBtn.setDisabled(False)
 
-        self.listView.clearWidgets()
+        self.listView.clear()
         for entry in self.list:
-            widget = ListElement(entry)
-            self.listView.addWidget(widget)
+            item = ListElement(entry)
+            self.listView.addItem(item)
 
-    def onSelected(self, widget: ListElement):
-        self.categorySelected.emit(widget.getDir())
+    def onSelected(self, item: ListElement):
+        self.categorySelected.emit(item.dir)
 
     def onNewCategory(self):
         text, ok = QInputDialog.getText(
