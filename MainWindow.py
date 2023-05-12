@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction
 from Browser import Browser
 from Viewer import Viewer
 from List import List
@@ -12,12 +12,39 @@ from DataModels.File import File
 from os.path import join
 
 
+class StoreCommand(QUndoCommand):
+    def __init__(self, field):
+        super().__init__()
+
+        self.field = field
+
+    def undo(self):
+        print(f"Undo: {self.field}")
+
+    def redo(self):
+        print(f"Redo: {self.field}")
+
+
 class MainWindow(QMainWindow):
     def __init__(self, title="MainWindow"):
         super().__init__()
         self.resize(800, 600)
 
         self.createMenu()
+
+        self.undoStack = QUndoStack()
+        undoAction = self.undoStack.createUndoAction(self)
+        undoAction.setShortcut(QKeySequence.Undo)
+
+        self.idk = StoreCommand("Dupa")
+        self.idk1 = StoreCommand("Dupa")
+        self.idk2 = StoreCommand("Dupa")
+        self.idk3 = StoreCommand("Dupa")
+
+        self.undoStack.push(self.idk)
+        self.undoStack.push(self.idk1)
+        self.undoStack.push(self.idk2)
+        self.undoStack.push(self.idk3)
 
         self.viewer = Viewer()
         self.browser = Browser()
@@ -49,9 +76,6 @@ class MainWindow(QMainWindow):
         self.splitterV.setStretchFactor(1, 0)
 
         self.setCentralWidget(self.splitterV)
-
-        self.undo = QAction("Undo", self)
-        self.undo.setShort
 
         self.files = []
         self._index = -1
