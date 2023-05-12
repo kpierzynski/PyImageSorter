@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QDockWidget, QVBoxLayout, QWidget, QUndoView, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction
 from Browser import Browser
@@ -9,20 +9,9 @@ from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
 
 from DataModels.Dir import Dir
 from DataModels.File import File
+from Commands.MoveFile import MoveFileCommand
+
 from os.path import join
-
-
-class StoreCommand(QUndoCommand):
-    def __init__(self, field):
-        super().__init__()
-
-        self.field = field
-
-    def undo(self):
-        print(f"Undo: {self.field}")
-
-    def redo(self):
-        print(f"Redo: {self.field}")
 
 
 class MainWindow(QMainWindow):
@@ -38,15 +27,14 @@ class MainWindow(QMainWindow):
 
         self.addAction(self.undoAction)
 
-        self.idk = StoreCommand("cmd0")
-        self.idk1 = StoreCommand("cmd1")
-        self.idk2 = StoreCommand("cmd2")
-        self.idk3 = StoreCommand("cmd3")
-
-        self.undoStack.push(self.idk)
-        self.undoStack.push(self.idk1)
-        self.undoStack.push(self.idk2)
-        self.undoStack.push(self.idk3)
+        self.undo_view = QUndoView(self.undoStack)
+        self.undo_view.setEmptyLabel("No Undo/Redo operations")
+        self.undo_view.setWindowTitle("Undo/Redo Stack")
+        self.undo_view.setMinimumWidth(200)
+        self.undo_view.setMaximumWidth(300)
+        dock_widget = QDockWidget("Undo View")
+        dock_widget.setWidget(self.undo_view)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock_widget)
 
         self.viewer = Viewer()
         self.browser = Browser()
@@ -84,10 +72,12 @@ class MainWindow(QMainWindow):
 
     def onCategorySelect(self, directory: Dir):
         try:
-            moveFile(self.file, directory)
+            self.undoStack.push(MoveFileCommand(
+                self.path, self.file, directory))
             self.files.pop(self._index)
             self.index = self.index
         except Exception as e:
+            print(e)
             QMessageBox(QMessageBox.Critical, 'Error occur',
                         f'Cannot move image to "{directory.name}", there is already file named "{self.file.name}"').exec()
 
@@ -118,19 +108,21 @@ class MainWindow(QMainWindow):
 
     def updateStatusBar(self):
         self.statusBar().showMessage(
-            f"{self._index}/{len(self.files)} {self.path}", 0)
+            f"{self._index+1}/{len(self.files)} {self.path}", 0)
 
     @index.setter
     def index(self, value: int) -> int:
-        self.updateStatusBar()
 
         if len(self.files) <= 0:
             self._index = -1
             self.viewer.clear()
             self.details.clear()
+
+            self.updateStatusBar()
             return self._index
 
         self._index = (value % len(self.files))
+        self.updateStatusBar()
 
         self.viewer.setImage(self.file)
         self.details.setText(
@@ -148,11 +140,11 @@ class MainWindow(QMainWindow):
     def onSelectDirectory(self):
         self.browser.browsePath()
 
-    # def keyPressEvent(self, event):
-    #    if event.key() == Qt.Key_A:
-    #        self.index -= 1
-    #    elif event.key() == Qt.Key_D:
-    #        self.index += 1
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_A:
+            self.index -= 1
+        elif event.key() == Qt.Key_D:
+            self.index += 1
 
     def onHelp(self):
         QMessageBox(QMessageBox.Critical, "Help",

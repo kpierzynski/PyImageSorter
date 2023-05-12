@@ -35,18 +35,18 @@ def filterImages(files: list[File]) -> list[File]:
     return [x for x in files if x.isImage]
 
 
-def _moveFile(filePath: str, targetDir: str) -> None:
-    fileName = basename(filePath)
-    targetPath = join(targetDir, fileName)
+def moveFile(file: File, directory: Dir) -> None:
+    filename = basename(file.path)
+    targetpath = join(directory.path, filename)
 
-    if isfile(targetPath):
-        raise Exception(f"Target file exists. Cannot move {fileName} file.")
-    else:
-        rename(filePath, targetPath)
+    if isfile(targetpath):
+        raise Exception(f"Target file exists. Cannot move {filename} file.")
+        return
 
+    rename(file.path, targetpath)
 
-def moveFile(file: File, direct: Dir) -> None:
-    _moveFile(file.path, direct.path)
+    file.path = targetpath
+    directory.filesCount += 1
 
 
 def createDirectory(path: str) -> Dir | None:
