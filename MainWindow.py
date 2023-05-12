@@ -33,13 +33,15 @@ class MainWindow(QMainWindow):
         self.createMenu()
 
         self.undoStack = QUndoStack()
-        undoAction = self.undoStack.createUndoAction(self)
-        undoAction.setShortcut(QKeySequence.Undo)
+        self.undoAction = self.undoStack.createUndoAction(self)
+        self.undoAction.setShortcut(QKeySequence.Undo)
 
-        self.idk = StoreCommand("Dupa")
-        self.idk1 = StoreCommand("Dupa")
-        self.idk2 = StoreCommand("Dupa")
-        self.idk3 = StoreCommand("Dupa")
+        self.addAction(self.undoAction)
+
+        self.idk = StoreCommand("cmd0")
+        self.idk1 = StoreCommand("cmd1")
+        self.idk2 = StoreCommand("cmd2")
+        self.idk3 = StoreCommand("cmd3")
 
         self.undoStack.push(self.idk)
         self.undoStack.push(self.idk1)
@@ -146,11 +148,11 @@ class MainWindow(QMainWindow):
     def onSelectDirectory(self):
         self.browser.browsePath()
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_A:
-            self.index -= 1
-        elif event.key() == Qt.Key_D:
-            self.index += 1
+    # def keyPressEvent(self, event):
+    #    if event.key() == Qt.Key_A:
+    #        self.index -= 1
+    #    elif event.key() == Qt.Key_D:
+    #        self.index += 1
 
     def onHelp(self):
         QMessageBox(QMessageBox.Critical, "Help",
