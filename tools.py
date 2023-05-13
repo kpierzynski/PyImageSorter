@@ -46,7 +46,6 @@ def moveFile(file: File, directory: Dir) -> None:
     rename(file.path, targetpath)
 
     file.path = targetpath
-    directory.filesCount += 1
 
 
 def createDirectory(path: str) -> Dir | None:

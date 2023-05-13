@@ -1,5 +1,7 @@
-from os.path import basename
-from os import walk
+from os.path import basename, join, isdir, isfile
+from os import listdir
+
+from .File import File
 
 
 class Dir:
@@ -7,8 +9,27 @@ class Dir:
         self.path = path
         self.name = basename(path)
 
-        _, _, files = next(walk(path))
-        self.filesCount = len(files)
+        self.directories = []
+        self.files = []
+
+        items = listdir(path)
+        for item in items:
+            itempath = join(path, item)
+
+            if isdir(itempath):
+                self.directories.append(Dir(itempath))
+            elif isfile(itempath):
+                f = File(itempath)
+                if f.isImage:
+                    self.files.append(f)
+
+    @property
+    def filesCount(self) -> int:
+        return len(self.files)
+
+    @property
+    def directoriesCount(self) -> int:
+        return len(self.directories)
 
     def __str__(self) -> str:
-        return f'Directory: {self.name}, path: {self.path}'
+        return self.path

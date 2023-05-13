@@ -9,7 +9,7 @@ from DataModels.Dir import Dir
 
 
 class List(QWidget):
-    categorySelected = Signal(Dir)
+    directoryPicked = Signal(Dir)
     newCategoryCreated = Signal(str)
 
     def __init__(self, listItems: list[Dir] = []):
@@ -45,7 +45,7 @@ class List(QWidget):
             self.listView.addItem(item)
 
     def onSelected(self, item: ListElement):
-        self.categorySelected.emit(item.dir)
+        self.directoryPicked.emit(item.dir)
 
     def onNewCategory(self):
         text, ok = QInputDialog.getText(
