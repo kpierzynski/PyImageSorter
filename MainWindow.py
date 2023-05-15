@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
 
         self.addAction(self.undoAction)
 
+        self.directory = None
         self._index = -1
 
         self.initUI()
@@ -98,6 +99,9 @@ class MainWindow(QMainWindow):
                 MoveFileCommand(self.directory, self.file, directory)
             )
 
+            if self.index == self.directory.filesCount:
+                self.index -= 1
+
             self.update()
 
         except Exception as e:
@@ -119,18 +123,28 @@ class MainWindow(QMainWindow):
                         f'Cannot create "{categoryName}" category, it exists!').exec()
 
     def update(self):
+        if self.index < 0 and self.directory.filesCount > 0:
+            self.index += 1
+
         self.updateStatusBar()
         self.updateDetails()
 
-        self.viewer.setImage(self.file)
+        if self.file:
+            self.viewer.setImage(self.file)
+        else:
+            self.viewer.clear()
 
     def updateStatusBar(self):
         self.statusBar().showMessage(
             f"{self._index+1}/{self.directory.filesCount} {self.directory.path}", 0)
 
     def updateDetails(self):
-        self.details.setText(
-            f"File: {self.file.name}\nPath: {self.file.path}\nDate: {self.file.time}\nDimensions: {self.file.width}x{self.file.height}")
+        if not self.file:
+            message = f"Select a file"
+        else:
+            message = f"File: {self.file.name}\nPath: {self.file.path}\nDate: {self.file.time}\nDimensions: {self.file.width}x{self.file.height}"
+
+        self.details.setText(message)
 
     # do i need this?
     def updateList(self):
@@ -139,10 +153,10 @@ class MainWindow(QMainWindow):
     @property
     def file(self) -> File:
         if not self.directory:
-            return
+            return None
 
-        if self.index < 0 and self.index >= self.directory.filesCount:
-            return
+        if self.index < 0 or self.index >= self.directory.filesCount:
+            return None
 
         return self.directory.files[self.index]
 
@@ -155,7 +169,11 @@ class MainWindow(QMainWindow):
         if not self.directory:
             return
 
-        self._index = (value % self.directory.filesCount)
+        if self.directory.filesCount <= 0:
+            self._index = -1
+        else:
+            self._index = (value % self.directory.filesCount)
+
         self.update()
 
     def keyPressEvent(self, event):
