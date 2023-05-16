@@ -1,7 +1,7 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QVBoxLayout, QWidget, QUndoView, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
-from Browser import Browser
+from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction, QScreen, QGuiApplication
+
 from Viewer import Viewer
 from List import List
 
@@ -9,23 +9,49 @@ from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
 
 from DataModels.Dir import Dir
 from DataModels.File import File
+from Commands.MoveFile import MoveFileCommand
+
 from os.path import join
+from os import getcwd
 
 
 class MainWindow(QMainWindow):
     def __init__(self, title="MainWindow"):
         super().__init__()
-        self.resize(800, 600)
 
-        self.createMenu()
+        self.undoStack = QUndoStack()
+        self.undoAction = self.undoStack.createUndoAction(self)
+        self.undoAction.triggered.connect(self.update)
+        self.undoAction.setShortcut(QKeySequence.Undo)
+
+        self.addAction(self.undoAction)
+
+        self.directory = None
+        self._index = -1
+
+        self.initUI()
+        self.initMenu()
+
+    def initUI(self):
+        screen = QGuiApplication.primaryScreen()
+        screen_geometry = screen.availableGeometry()
+
+        self.setWindowTitle("PyImageSorter")
+        self.resize(int(screen_geometry.width() * 0.8),
+                    int(screen_geometry.height() * 0.8))
+
+        self.setGeometry(
+            (screen_geometry.width() * 0.1),
+            (screen_geometry.height() * 0.1),
+            self.width(),
+            self.height()
+        )
 
         self.viewer = Viewer()
-        self.browser = Browser()
-        self.browser.browse.connect(self.onDirectoryPicked)
 
         self.list = List()
-        self.list.categorySelected.connect(self.onCategorySelect)
-        self.list.newCategoryCreated.connect(self.onNewCategoryCreation)
+        self.list.directoryPicked.connect(self.handleDirectoryPick)
+        self.list.newCategoryCreated.connect(self.handleNewDirectory)
 
         self.detailsFrame = QFrame()
         self.detailsLayout = QVBoxLayout()
@@ -50,77 +76,108 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.splitterV)
 
-        self.undo = QAction("Undo", self)
-        self.undo.setShort
+    def initMenu(self):
+        menu = self.menuBar()
 
-        self.files = []
-        self._index = -1
+        fileMenu = menu.addMenu("File")
+        menu.addAction("Help", self.onHelp)
 
-    def onCategorySelect(self, directory: Dir):
+        fileMenu.addAction("Open Directory", self.handleBrowse)
+        fileMenu.addAction("Exit", self.onExit)
+
+    def handleBrowse(self):
+        directorypath = QFileDialog.getExistingDirectory(
+            self, "Select Directory", getcwd())
+
+        if not directorypath:
+            return
+
+        self.directory = Dir(directorypath)
+        self.list.setList(self.directory.directories)
+        self.index = 0
+
+    def handleDirectoryPick(self, directory: Dir):
         try:
-            moveFile(self.file, directory)
-            self.files.pop(self._index)
-            self.index = self.index
+            self.undoStack.push(
+                MoveFileCommand(self.directory, self.file, directory)
+            )
+
+            if self.index == self.directory.filesCount:
+                self.index -= 1
+
+            self.update()
+
         except Exception as e:
+            print(e)
             QMessageBox(QMessageBox.Critical, 'Error occur',
                         f'Cannot move image to "{directory.name}", there is already file named "{self.file.name}"').exec()
 
-    def onNewCategoryCreation(self, categoryName: str) -> None:
-        if not self.path:
+    def handleNewDirectory(self, name: str):
+        if not self.directory:
             return
 
         try:
-            createDirectory(join(self.path, categoryName))
-            self.list.setList(getDirs(self.path))
-
+            self.directory.directories.append(
+                createDirectory(join(self.directory.path, name)))
+            self.list.setList(self.directory.directories)
         except Exception as e:
             print(e)
             QMessageBox(QMessageBox.Critical, 'Error occur',
                         f'Cannot create "{categoryName}" category, it exists!').exec()
 
+    def update(self):
+        if self.index < 0 and self.directory.filesCount > 0:
+            self.index += 1
+
+        self.updateStatusBar()
+        self.updateDetails()
+
+        if self.file:
+            self.viewer.setImage(self.file)
+        else:
+            self.viewer.clear()
+
+    def updateStatusBar(self):
+        self.statusBar().showMessage(
+            f"{self._index+1}/{self.directory.filesCount} {self.directory.path}", 0)
+
+    def updateDetails(self):
+        if not self.file:
+            message = f"Select a file"
+        else:
+            message = f"File: {self.file.name}\nPath: {self.file.path}\nDate: {self.file.time}\nDimensions: {self.file.width}x{self.file.height}"
+
+        self.details.setText(message)
+
+    # do i need this?
+    def updateList(self):
+        pass
+
     @property
     def file(self) -> File:
-        if self._index < 0 or self._index >= len(self.files):
+        if not self.directory:
             return None
 
-        file = self.files[self.index]
-        return file
+        if self.index < 0 or self.index >= self.directory.filesCount:
+            return None
+
+        return self.directory.files[self.index]
 
     @property
     def index(self) -> int:
         return self._index
 
-    def updateStatusBar(self):
-        self.statusBar().showMessage(
-            f"{self._index}/{len(self.files)} {self.path}", 0)
-
     @index.setter
-    def index(self, value: int) -> int:
-        self.updateStatusBar()
+    def index(self, value: int):
+        if not self.directory:
+            return
 
-        if len(self.files) <= 0:
+        if self.directory.filesCount <= 0:
             self._index = -1
-            self.viewer.clear()
-            self.details.clear()
-            return self._index
+        else:
+            self._index = (value % self.directory.filesCount)
 
-        self._index = (value % len(self.files))
-
-        self.viewer.setImage(self.file)
-        self.details.setText(
-            f"File: {self.file.name}\nPath: {self.file.path}\nDate: {self.file.time}\nDimensions: {self.file.width}x{self.file.height}")
-
-        return self._index
-
-    def onDirectoryPicked(self, path: str):
-        self.path = path
-        self.files = filterImages(getFiles(path))
-        self.list.setList(getDirs(path))
-        self.index = 0
-        self.updateStatusBar()
-
-    def onSelectDirectory(self):
-        self.browser.browsePath()
+        self.update()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A:
@@ -128,49 +185,12 @@ class MainWindow(QMainWindow):
         elif event.key() == Qt.Key_D:
             self.index += 1
 
+    def onDirectoryPicked(self, path: str):
+        pass
+
     def onHelp(self):
         QMessageBox(QMessageBox.Critical, "Help",
-                    "Created by kpierzynski").exec()
+                    "Created by kpierzynski", parent=self).exec()
 
     def onExit(self):
         self.close()
-
-    def createMenu(self):
-        self.menu = [
-            {
-                "name": "File",
-                "items": [
-                    {
-                        "name": "Open Directory",
-                        "spacerAfter": True,
-                        "action": self.onSelectDirectory
-                    },
-                    {
-                        "name": "Exit",
-                        "action": self.onExit
-                    }
-                ]
-            },
-            {
-                "name": "Help",
-                "action": self.onHelp
-            }
-        ]
-
-        def createMenuTree(menu, tree):
-            for item in tree:
-                if 'items' in item:
-                    item['object'] = menu.addMenu(item["name"])
-                    createMenuTree(item['object'], item['items'])
-                else:
-                    item['object'] = menu.addAction(item['name'])
-
-                    if "action" in item:
-                        item['object'].triggered.connect(item['action'])
-
-                if 'spacerAfter' in item:
-                    if item['spacerAfter']:
-                        menu.addSeparator()
-
-        menuBar = self.menuBar()
-        createMenuTree(menuBar, self.menu)
