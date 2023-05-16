@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QVBoxLayout, QWidget, QUndoView, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction
+from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction, QScreen, QGuiApplication
 
 from Viewer import Viewer
 from List import List
@@ -33,16 +33,19 @@ class MainWindow(QMainWindow):
         self.initMenu()
 
     def initUI(self):
-        self.resize(800, 600)
+        screen = QGuiApplication.primaryScreen()
+        screen_geometry = screen.availableGeometry()
 
-        self.undo_view = QUndoView(self.undoStack)
-        self.undo_view.setEmptyLabel("No Undo/Redo operations")
-        self.undo_view.setWindowTitle("Undo/Redo Stack")
-        self.undo_view.setMinimumWidth(200)
-        self.undo_view.setMaximumWidth(300)
-        dock_widget = QDockWidget("Undo View")
-        dock_widget.setWidget(self.undo_view)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock_widget)
+        self.setWindowTitle("PyImageSorter")
+        self.resize(int(screen_geometry.width() * 0.8),
+                    int(screen_geometry.height() * 0.8))
+
+        self.setGeometry(
+            (screen_geometry.width() * 0.1),
+            (screen_geometry.height() * 0.1),
+            self.width(),
+            self.height()
+        )
 
         self.viewer = Viewer()
 
