@@ -1,5 +1,5 @@
 from os.path import join, isfile, isdir, basename, exists
-from os import listdir, rename, makedirs
+from os import listdir, rename, makedirs, remove
 
 from PIL import Image
 
@@ -28,11 +28,7 @@ def getDirs(path: str) -> list[Dir]:
         if isdir(dirPath):
             dirs.append(Dir(dirPath))
 
-    return dirs
-
-
-def filterImages(files: list[File]) -> list[File]:
-    return [x for x in files if x.isImage]
+    return dir
 
 
 def moveFile(file: File, directory: Dir) -> None:
@@ -55,3 +51,12 @@ def createDirectory(path: str) -> Dir | None:
 
     makedirs(path)
     return Dir(path)
+
+
+def removeFile(file: File) -> None:
+    if not exists(file.path) or not isfile(file.path):
+        raise Exception(
+            f"Given path {file.path} does not exist or it is not a file.")
+        return
+
+    remove(file.path)
