@@ -3,7 +3,7 @@ from PySide6.QtGui import QUndoCommand
 from DataModels.Dir import Dir
 from DataModels.File import File
 
-from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
+from tools import getFiles, getDirs, moveFile, createDirectory
 
 
 class MoveFileCommand(QUndoCommand):

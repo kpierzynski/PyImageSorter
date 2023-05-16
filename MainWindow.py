@@ -1,15 +1,17 @@
-from PySide6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QVBoxLayout, QWidget, QUndoView, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
+from PySide6.QtWidgets import QMainWindow, QToolBar, QFileDialog, QDockWidget, QVBoxLayout, QWidget, QUndoView, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction, QScreen, QGuiApplication
 
 from Viewer import Viewer
 from List import List
+from Toolbar import Toolbar
 
-from tools import getFiles, getDirs, filterImages, moveFile, createDirectory
+from tools import getFiles, getDirs, moveFile, createDirectory
 
 from DataModels.Dir import Dir
 from DataModels.File import File
 from Commands.MoveFile import MoveFileCommand
+from Commands.DeleteFile import DeleteFileCommand
 
 from os.path import join
 from os import getcwd
@@ -21,6 +23,7 @@ class MainWindow(QMainWindow):
 
         self.undoStack = QUndoStack()
         self.undoAction = self.undoStack.createUndoAction(self)
+        self.undoAction.setIcon(QIcon.fromTheme('undo'))
         self.undoAction.triggered.connect(self.update)
         self.undoAction.setShortcut(QKeySequence.Undo)
 
@@ -41,11 +44,17 @@ class MainWindow(QMainWindow):
                     int(screen_geometry.height() * 0.8))
 
         self.setGeometry(
-            (screen_geometry.width() * 0.1),
-            (screen_geometry.height() * 0.1),
+            (screen_geometry.width() * (1-0.8)/2),
+            (screen_geometry.height() * (1-0.8)/2),
             self.width(),
             self.height()
         )
+
+        self.toolbar = Toolbar(self)
+        self.toolbar.delete.triggered.connect(self.handleFileRemove)
+        self.toolbar.next.triggered.connect(self.nextIndex)
+        self.toolbar.prev.triggered.connect(self.prevIndex)
+        self.toolbar.addAction(self.undoAction)
 
         self.viewer = Viewer()
 
@@ -96,6 +105,22 @@ class MainWindow(QMainWindow):
         self.list.setList(self.directory.directories)
         self.index = 0
 
+    def handleFileRemove(self):
+        try:
+            self.undoStack.push(
+                DeleteFileCommand(self.directory, self.file)
+            )
+
+            if self.index == self.directory.filesCount:
+                self.index -= 1
+
+            self.update()
+
+        except Exception as e:
+            print(e)
+            QMessageBox(QMessageBox.Critical, 'Error occur',
+                        f'Cannot remove image').exec()
+
     def handleDirectoryPick(self, directory: Dir):
         try:
             self.undoStack.push(
@@ -126,6 +151,11 @@ class MainWindow(QMainWindow):
                         f'Cannot create "{categoryName}" category, it exists!').exec()
 
     def update(self):
+        if self.directory.filesCount <= 0:
+            self.toolbar.lock()
+        else:
+            self.toolbar.unlock()
+
         if self.index < 0 and self.directory.filesCount > 0:
             self.index += 1
 
@@ -179,18 +209,15 @@ class MainWindow(QMainWindow):
 
         self.update()
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_A:
-            self.index -= 1
-        elif event.key() == Qt.Key_D:
-            self.index += 1
+    def nextIndex(self):
+        self.index += 1
 
-    def onDirectoryPicked(self, path: str):
-        pass
+    def prevIndex(self):
+        self.index -= 1
 
     def onHelp(self):
-        QMessageBox(QMessageBox.Critical, "Help",
-                    "Created by kpierzynski", parent=self).exec()
+        QMessageBox(QMessageBox.Information, "Help",
+                    "Created by kpierzynski\n\nVisit https://github.com/kpierzynski/PyImageSorter for further help.", parent=self).exec()
 
     def onExit(self):
         self.close()
