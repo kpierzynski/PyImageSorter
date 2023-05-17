@@ -27,7 +27,6 @@ root_directory
 
 - Moving files should be done using copy then remove rather than rename. Moving create problems when files are in different filesystems.
 - Icons doesn't work on Windows. (QIcon.fromTheme)
-- Loading indicator on huge directories with thousands of images.
 
 ## Dependencies:
 

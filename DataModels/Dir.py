@@ -5,7 +5,7 @@ from .File import File
 
 
 class Dir:
-    def __init__(self, path):
+    def __init__(self, path, progress_signal=None, thread=None):
         self.path = path
         self.name = basename(path)
 
@@ -13,7 +13,15 @@ class Dir:
         self.files = []
 
         items = listdir(path)
-        for item in items:
+
+        total = len(items)
+        if progress_signal:
+            progress_signal.emit(0.0)
+
+        for i, item in enumerate(items):
+            if thread and thread.isInterruptionRequested():
+                break
+
             itempath = join(path, item)
 
             if isdir(itempath):
@@ -22,6 +30,12 @@ class Dir:
                 f = File(itempath)
                 if f.isImage:
                     self.files.append(f)
+
+            if progress_signal:
+                progress_signal.emit(i/total)
+
+        if progress_signal:
+            progress_signal.emit(1.0)
 
     @property
     def filesCount(self) -> int:

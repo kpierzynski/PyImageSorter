@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QMainWindow, QToolBar, QFileDialog, QDockWidget, QVBoxLayout, QWidget, QUndoView, QPushButton, QHBoxLayout, QLabel, QMessageBox, QListWidget, QListWidgetItem, QSplitter, QFrame, QTextEdit
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QIcon, QUndoStack, QKeySequence, QUndoCommand, QAction, QScreen, QGuiApplication
 
 from Viewer import Viewer
@@ -12,6 +12,8 @@ from DataModels.Dir import Dir
 from DataModels.File import File
 from Commands.MoveFile import MoveFileCommand
 from Commands.DeleteFile import DeleteFileCommand
+from DirectoryLoader import DirectoryLoader
+from Progress import Progress
 
 from os.path import join
 from os import getcwd
@@ -101,7 +103,13 @@ class MainWindow(QMainWindow):
         if not directorypath:
             return
 
-        self.directory = Dir(directorypath)
+        self.progress = Progress(directorypath, parent=self)
+        self.progress.start()
+        self.progress.finished.connect(self.handleBrowseDone)
+
+    def handleBrowseDone(self, directory):
+        self.directory = directory
+
         self.list.setList(self.directory.directories)
         self.index = 0
 
@@ -181,6 +189,10 @@ class MainWindow(QMainWindow):
 
     # do i need this?
     def updateList(self):
+        pass
+
+    # and this?
+    def updateToolbar(self):
         pass
 
     @property
